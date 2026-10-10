@@ -8,7 +8,7 @@
     "boot_mode": "snapshot"
   },
   "server": {
-    "listen_addr": "127.0.0.1:5037",
+    "listen_addr": "127.0.0.1:18037",
     "adb_port": 5555
   },
   "integrity": {

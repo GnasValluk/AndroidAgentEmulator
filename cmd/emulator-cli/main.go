@@ -148,7 +148,7 @@ func main() {
 		fmt.Println(screen.ScrcpyHint(adbClient))
 	case "serve":
 		mux := server.New(cfg, v)
-		fmt.Println("REST listening on", cfg.Server.ListenAddr, "(set EMULATOR_LISTEN_ADDR=0.0.0.0:5037 for external)")
+		fmt.Println("REST listening on", cfg.Server.ListenAddr, "(set EMULATOR_LISTEN_ADDR=0.0.0.0:18037 for external)")
 		if err := http.ListenAndServe(cfg.Server.ListenAddr, mux); err != nil {
 			fatal(err)
 		}
@@ -239,7 +239,7 @@ func runDoctor(cfg config.Config) {
 		}
 	}
 	fmt.Println("Windows hypervisor (WHPX): enable 'Windows Hypervisor Platform' + 'Virtual Machine Platform' in Optional Features.")
-	fmt.Println("External access: EMULATOR_LISTEN_ADDR=0.0.0.0:5037 EMULATOR_API_TOKEN=<secret> emulator-cli serve")
+	fmt.Println("External access: EMULATOR_LISTEN_ADDR=0.0.0.0:18037 EMULATOR_API_TOKEN=<secret> emulator-cli serve")
 }
 
 func fatal(err error) {

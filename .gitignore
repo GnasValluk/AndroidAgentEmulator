@@ -5,3 +5,6 @@ emulator-cli.exe
 .env
 __pycache__/
 *.pyc
+*.keystore
+samples/test-apk/out/
+samples/test-apk/ping.apk

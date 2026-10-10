@@ -56,7 +56,6 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
   (`system-images;android-36;google_apis_playstore;x86_64`).
 
 ## First-boot results (2026-10-10, AVD `a16`)
-
 - `sys.boot_completed=1`, Android 16, SDK 36.
 - Fingerprint `google/sdk_gphone64_x86_64/emu64xa:16/BE2A.250530.026.F3/13894323:userdebug/dev-keys`,
   `ro.debuggable=1`, empty `verifiedbootstate`. This is a userdebug image, so
@@ -70,3 +69,14 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
 - CLI `adb-props`, `screenshot`, `install`, `adb-shell` work against the
   running emulator after `adb connect 127.0.0.1:5555`; the adb client now
   connects automatically before each command.
+
+## E2E results (2026-10-10)
+
+- Minimal APK (`samples/test-apk`, built with javac + d8 + aapt2 + apksigner,
+  build-tools 36.1.0, no Gradle): installed, launched, text renders on screen.
+- REST on `127.0.0.1:18037` (port 5037 belongs to the adb server, so the
+  default was moved): `/v1/status`, `/v1/version`, `/v1/integrity`,
+  `/v1/adb/props`, `/v1/screen.png` (valid PNG), `POST /v1/apk/install`
+  (`Success`), 401 without token. All passed.
+- `system-images;android-36;google_apis_playstore;x86_64` downloaded to
+  `D:\data\android-sdk` for the integrity track (ships Play Store).

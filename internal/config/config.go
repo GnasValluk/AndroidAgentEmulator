@@ -21,7 +21,7 @@ type DeviceProfile struct {
 }
 
 type ServerConfig struct {
-	ListenAddr string `json:"listen_addr"` // default 127.0.0.1:5037, use 0.0.0.0:5037 for external
+	ListenAddr string `json:"listen_addr"` // default 127.0.0.1:18037 (5037 is adb), use 0.0.0.0:18037 for external
 	AuthToken  string `json:"auth_token"`  // loaded from env EMULATOR_API_TOKEN, never committed
 	AdbPort    int    `json:"adb_port"`
 }
@@ -54,7 +54,7 @@ func Default() Config {
 			BootMode:   "snapshot",
 		},
 		Server: ServerConfig{
-			ListenAddr: "127.0.0.1:5037",
+			ListenAddr: "127.0.0.1:18037",
 			AdbPort:    5555,
 		},
 		Integrity: IntegrityConfig{

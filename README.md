@@ -51,7 +51,7 @@ Snapshots are offline `qemu-img` operations; stop the VM first.
 
 | Variable | Purpose |
 |---|---|
-| `EMULATOR_LISTEN_ADDR` | REST bind, e.g. `0.0.0.0:5037` for LAN access |
+| `EMULATOR_LISTEN_ADDR` | REST bind, e.g. `0.0.0.0:18037` for LAN access (default `127.0.0.1:18037`; port 5037 belongs to adb) |
 | `EMULATOR_API_TOKEN` | Bearer token for REST |
 | `EMULATOR_FINGERPRINT` | Certified device fingerprint for `MEETS_DEVICE_INTEGRITY` |
 | `EMULATOR_IMAGE_DIR` | Image directory override |
@@ -62,7 +62,7 @@ Snapshots are offline `qemu-img` operations; stop the VM first.
 ## REST
 
 ```powershell
-$env:EMULATOR_LISTEN_ADDR="0.0.0.0:5037"; $env:EMULATOR_API_TOKEN="<secret>"
+$env:EMULATOR_LISTEN_ADDR="0.0.0.0:18037"; $env:EMULATOR_API_TOKEN="<secret>"
 go run ./cmd/emulator-cli --api auto serve
 ```
 
@@ -98,6 +98,7 @@ internal/screen       screencap PNG + scrcpy hint
 internal/integrity    offline readiness checks
 internal/server       REST API
 samples/verify-play-integrity  server-side verdict verifier
+samples/test-apk               minimal APK built without Gradle (e2e install fixture)
 scripts               Windows setup helpers
 versions/matrix.json  version data (refreshed by CI)
 ```

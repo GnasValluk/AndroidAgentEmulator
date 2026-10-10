@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.0",
   "info": {"title": "AndroidAgentEmulator", "version": "0.3.0", "description": "Open REST for external access. Auth: Authorization: Bearer <EMULATOR_API_TOKEN>."},
-  "servers": [{"url": "http://{host}:5037/v1", "variables": {"host": {"default": "127.0.0.1"}}}],
+  "servers": [{"url": "http://{host}:18037/v1", "variables": {"host": {"default": "127.0.0.1"}}}],
   "paths": {
     "/status": {"get": {"summary": "Instance status", "responses": {"200": {"description": "ok"}}}},
     "/version": {"get": {"summary": "Resolved Android version (dynamic, matrix-driven)", "responses": {"200": {"description": "ok"}}}},
