@@ -5,6 +5,7 @@ package adb
 import (
 	"fmt"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -124,6 +125,42 @@ func (c Client) Shell(args []string) (string, error) {
 // Screencap returns PNG bytes from `adb exec-out screencap -p`.
 func (c Client) Screencap() ([]byte, error) {
 	return c.runBytes("exec-out", "screencap", "-p")
+}
+
+// Input injects tap/swipe/text/key events. Coordinates are clamped to sane
+// ranges; text is length-capped. Used by remote desktop UIs.
+func (c Client) Input(action string, x, y, x1, y1, x2, y2, ms int, text string, code int) (string, error) {
+	clamp := func(v, lo, hi int) int {
+		if v < lo {
+			return lo
+		}
+		if v > hi {
+			return hi
+		}
+		return v
+	}
+	switch action {
+	case "tap":
+		return c.run("shell", "input", "tap",
+			strconv.Itoa(clamp(x, 0, 8192)), strconv.Itoa(clamp(y, 0, 8192)))
+	case "swipe":
+		return c.run("shell", "input", "swipe",
+			strconv.Itoa(clamp(x1, 0, 8192)), strconv.Itoa(clamp(y1, 0, 8192)),
+			strconv.Itoa(clamp(x2, 0, 8192)), strconv.Itoa(clamp(y2, 0, 8192)),
+			strconv.Itoa(clamp(ms, 0, 5000)))
+	case "text":
+		if len(text) > 500 {
+			text = text[:500]
+		}
+		// %s escapes spaces for input text; strip newlines.
+		text = strings.ReplaceAll(strings.ReplaceAll(text, "\n", " "), "\r", "")
+		text = strings.ReplaceAll(text, " ", "%s")
+		return c.run("shell", "input", "text", text)
+	case "key":
+		return c.run("shell", "input", "keyevent", strconv.Itoa(clamp(code, 0, 300)))
+	default:
+		return "", fmt.Errorf("unknown input action %q (tap|swipe|text|key)", action)
+	}
 }
 
 // Emu runs `adb emu <args>` (emulator console: `avd snapshot save|list|...`).

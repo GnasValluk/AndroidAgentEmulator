@@ -121,6 +121,35 @@ func New(cfg config.Config, v version.Resolved) *http.ServeMux {
 		}
 		write(w, 200, map[string]string{"status": "boot_completed"})
 	}))
+	// POST /v1/adb/input?port= JSON {action:tap,swipe,text,key, ...} for remote control.
+	mux.HandleFunc("/v1/adb/input", withAuth(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			http.Error(w, "POST only", http.StatusMethodNotAllowed)
+			return
+		}
+		var in struct {
+			Action string `json:"action"`
+			X      int    `json:"x"`
+			Y      int    `json:"y"`
+			X1     int    `json:"x1"`
+			Y1     int    `json:"y1"`
+			X2     int    `json:"x2"`
+			Y2     int    `json:"y2"`
+			Ms     int    `json:"ms"`
+			Text   string `json:"text"`
+			Code   int    `json:"code"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&in); err != nil {
+			write(w, 400, map[string]string{"error": err.Error()})
+			return
+		}
+		out, err := adbFor(r).Input(in.Action, in.X, in.Y, in.X1, in.Y1, in.X2, in.Y2, in.Ms, in.Text, in.Code)
+		if err != nil {
+			write(w, 502, map[string]string{"error": out + err.Error()})
+			return
+		}
+		write(w, 200, map[string]string{"result": out})
+	}))
 	// POST /v1/apk/install with raw APK bytes (external CI can push without adb locally).
 	mux.HandleFunc("/v1/apk/install", withAuth(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
