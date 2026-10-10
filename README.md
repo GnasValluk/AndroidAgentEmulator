@@ -1,5 +1,7 @@
 # AndroidAgentEmulator
 
+[![ci](https://github.com/GnasValluk/AndroidAgentEmulator/actions/workflows/ci.yml/badge.svg)](https://github.com/GnasValluk/AndroidAgentEmulator/actions/workflows/ci.yml)
+
 Trình giả lập Android headless cho **Windows host**: mạnh/mượt (QEMU+WHPX+VirtIO-GPU), nhẹ (headless+snapshot), CLI mở cho truy cập bên ngoài (REST + ADB-over-TCP + token).
 
 - **Không hardcode version:** `--api auto` resolve Android mới nhất động (hiện tại 16/Baklava, CI check hàng tuần). Override: `--api 16` hoặc `EMULATOR_ANDROID_API`.
@@ -29,3 +31,10 @@ go run ./cmd/emulator-cli --api auto serve
 # curl -H "Authorization: Bearer <secret>" http://<host>:5037/v1/integrity
 ```
 Secrets qua env (`EMULATOR_FINGERPRINT`, `EMULATOR_API_TOKEN`), không commit.
+
+## Verify verdict phía server
+Quyết định ALLOW/DENY thật làm trên server với verdict đã giải mã (xem `docs/SERVER_VERIFY.md`):
+```powershell
+python samples/verify-play-integrity/selftest.py   # 10 case mẫu, không cần mạng
+python samples/verify-play-integrity/verify.py verdict.json --package com.example.app --nonce <expected> --policy standard
+```

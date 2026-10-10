@@ -1,0 +1,35 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Vet
+        run: go vet ./...
+      - name: Test (Go)
+        run: go test ./...
+      - name: Self-test (verify sample)
+        run: python samples/verify-play-integrity/selftest.py
+      - name: Build windows exe
+        run: go build -o emulator-cli.exe ./cmd/emulator-cli
+      - name: Smoke CLI
+        run: |
+          ./emulator-cli.exe --api 16 version
+          ./emulator-cli.exe --api 16 integrity
+          ./emulator-cli.exe --api 16 qemu-dry-run
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emulator-cli-windows-amd64
+          path: emulator-cli.exe
