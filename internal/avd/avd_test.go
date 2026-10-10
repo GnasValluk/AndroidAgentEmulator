@@ -21,8 +21,7 @@ func TestTargetFromSysdir(t *testing.T) {
 	}
 }
 
-func TestListReadsAVD(t *testing.T) {
-	home := t.TempDir()
+func TestListReadsAVD(t *testing.T) {	home := t.TempDir()
 	avd := filepath.Join(home, "tab1.avd")
 	_ = os.MkdirAll(avd, 0o755)
 	_ = os.WriteFile(filepath.Join(home, "tab1.ini"), []byte("avd.ini.encoding=UTF-8\npath="+avd+"\n"), 0o644)
@@ -44,5 +43,24 @@ func TestListReadsAVD(t *testing.T) {
 	list, _ = m.List()
 	if list[0].RAMMB != 3072 || list[0].CPUs != 6 {
 		t.Fatalf("patch failed: %+v", list[0])
+	}
+}
+
+func TestDecodeLogFile(t *testing.T) {
+	// UTF-16LE with BOM
+	raw := []byte{0xFF, 0xFE, 'h', 0, 'i', 0, '\n', 0}
+	if got := string(decodeLogFile(raw)); got != "hi\n" {
+		t.Fatalf("bom decode got %q", got)
+	}
+	// UTF-16LE without BOM, mostly ASCII
+	raw = []byte{'O', 0, 'K', 0, '\r', 0, '\n', 0}
+	pad := make([]byte, 200)
+	copy(pad, raw)
+	if got := string(decodeLogFile(pad)); got[:4] != "OK\r\n" {
+		t.Fatalf("nobom decode got %q", got)
+	}
+	// Plain UTF-8 passes through
+	if got := string(decodeLogFile([]byte("plain\n"))); got != "plain\n" {
+		t.Fatalf("passthrough got %q", got)
 	}
 }

@@ -77,6 +77,21 @@ Snapshots are offline `qemu-img` operations; stop the VM first.
 | `EMULATOR_ANDROID_API` | Version override |
 | `EMULATOR_MATRIX` | Version matrix path override |
 
+## Dashboard
+
+`serve` also hosts a management UI at `http://<host>:18037/` (no extra
+dependencies; the page calls the same REST API). Enter the API token once
+(stored in browser localStorage). Devices show live status, preview,
+snapshots, settings (RAM/CPU/resolution, stopped only), APK install, and
+boot logs. ADB-backed endpoints accept `?port=` to target a specific
+emulator.
+
+```powershell
+$env:EMULATOR_LISTEN_ADDR="0.0.0.0:18037"; $env:EMULATOR_API_TOKEN="<secret>"
+go run ./cmd/emulator-cli --api auto serve
+# open http://<host>:18037/
+```
+
 ## REST
 
 ```powershell

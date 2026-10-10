@@ -258,19 +258,23 @@ func (m *Manager) PatchConfig(name string, p ConfigPatch) (map[string]string, er
 	return set, nil
 }
 
-// LogTail returns the last n lines of the UI boot log, falling back to the
-// newest boot*.log when the AVD was started outside the dashboard.
+// LogTail returns the last n lines of the UI boot log. When the AVD was
+// started outside the dashboard, it falls back to the newest boot*.log in
+// the .avd dir or the AVD home dir.
 func (m *Manager) LogTail(name string, n int) (string, error) {
 	path := filepath.Join(iniPath(m.AvdHome, name), "boot-ui.log")
 	if _, err := os.Stat(path); err != nil {
-		if latest, err := newestBootLog(iniPath(m.AvdHome, name)); err == nil {
-			path = latest
+		latest, err := newestBootLog(iniPath(m.AvdHome, name), m.AvdHome)
+		if err != nil {
+			return "", err
 		}
+		path = latest
 	}
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
+	b = decodeLogFile(b)
 	lines := strings.Split(strings.ReplaceAll(string(b), "\r\n", "\n"), "\n")
 	if len(lines) > n {
 		lines = lines[len(lines)-n:]
@@ -278,27 +282,63 @@ func (m *Manager) LogTail(name string, n int) (string, error) {
 	return strings.Join(lines, "\n"), nil
 }
 
-// --- helpers (pure, unit-tested) ---
-
-func newestBootLog(dir string) (string, error) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return "", err
+// decodeLogFile handles emulator logs written as UTF-16LE on Windows
+// (with or without BOM). Plain UTF-8 passes through.
+func decodeLogFile(b []byte) []byte {
+	if len(b) >= 2 && b[0] == 0xFF && b[1] == 0xFE {
+		return utf16LEDecode(b[2:])
 	}
-	best := ""
-	var bestTime int64
-	for _, e := range entries {
-		if e.IsDir() || !strings.HasPrefix(e.Name(), "boot") || !strings.HasSuffix(e.Name(), ".log") {
+	nul := 0
+	for _, c := range b {
+		if c == 0 {
+			nul++
+		}
+	}
+	if len(b) > 100 && nul > len(b)/10 {
+		return utf16LEDecode(b)
+	}
+	return b
+}
+
+func utf16LEDecode(b []byte) []byte {
+	var sb strings.Builder
+	for i := 0; i+1 < len(b); i += 2 {
+		r := rune(b[i]) | rune(b[i+1])<<8
+		if r == 0 {
 			continue
 		}
-		if fi, err := e.Info(); err == nil {
-			if t := fi.ModTime().UnixNano(); t > bestTime {
-				bestTime, best = t, filepath.Join(dir, e.Name())
+		if r < 0xD800 || r > 0xDFFF {
+			sb.WriteRune(r)
+		} else {
+			sb.WriteRune('?')
+		}
+	}
+	return []byte(sb.String())
+}
+
+// --- helpers (pure, unit-tested) ---
+
+func newestBootLog(dirs ...string) (string, error) {
+	best := ""
+	var bestTime int64
+	for _, dir := range dirs {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+		for _, e := range entries {
+			if e.IsDir() || !strings.HasPrefix(e.Name(), "boot") || !strings.HasSuffix(e.Name(), ".log") {
+				continue
+			}
+			if fi, err := e.Info(); err == nil {
+				if t := fi.ModTime().UnixNano(); t > bestTime {
+					bestTime, best = t, filepath.Join(dir, e.Name())
+				}
 			}
 		}
 	}
 	if best == "" {
-		return "", fmt.Errorf("no boot log in %s", dir)
+		return "", fmt.Errorf("no boot log found")
 	}
 	return best, nil
 }
