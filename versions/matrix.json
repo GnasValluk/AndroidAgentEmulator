@@ -3,7 +3,15 @@
   "updated_at": "2026-10-10",
   "source": "developer.android.com/about/versions + dl.google.com SDK repository (CI refresh weekly)",
   "entries": [
-    {"version": "16", "api": "36", "codename": "Baklava", "branch": "android-16.0.0_r1"},
+    {
+      "version": "16",
+      "api": "36",
+      "codename": "Baklava",
+      "branch": "android-16.0.0_r1",
+      "gsi_x86_64_gms_url": "https://dl.google.com/developers/android/baklava/images/gsi/gsi_gms_x86_64-exp-BP2A.250605.031.A3-13578795-ccf343cd.zip",
+      "gsi_x86_64_gms_sha256": "ccf343cd5f0261ca4d3fcc442ad45a5cdedc05a10a7056427e5381013a0b04d4",
+      "gsi_build": "BP2A.250605.031.A3"
+    },
     {"version": "15", "api": "35", "codename": "VanillaIceCream", "branch": "android-15.0.0_r1"},
     {"version": "14", "api": "34", "codename": "UpsideDownCake", "branch": "android-14.0.0_r1"}
   ]
