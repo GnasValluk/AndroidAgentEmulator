@@ -14,18 +14,28 @@ jobs:
         with:
           go-version: "1.24"
           cache: true
-      - name: Build
+      - name: Build CLI
         run: go build -ldflags "-X main.cliVersion=${{ github.ref_name }}" -o emulator-cli.exe ./cmd/emulator-cli
-      - name: Smoke
+      - name: Smoke CLI
         run: |
           ./emulator-cli.exe --version
           ./emulator-cli.exe --api 16 qemu-dry-run
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build desktop app
+        run: dotnet publish desktop/EmulatorManager/EmulatorManager.csproj -c Release -o desktop/EmulatorManager/publish --nologo -v quiet
       - name: Checksum
-        run: (Get-FileHash emulator-cli.exe -Algorithm SHA256).Hash | Out-File emulator-cli.exe.sha256
+        run: |
+          (Get-FileHash emulator-cli.exe -Algorithm SHA256).Hash | Out-File emulator-cli.exe.sha256
+          Compress-Archive -Path desktop/EmulatorManager/publish/EmulatorManager.exe -DestinationPath EmulatorManager-${{ github.ref_name }}-win-x64.zip -Force
+          (Get-FileHash EmulatorManager-${{ github.ref_name }}-win-x64.zip -Algorithm SHA256).Hash | Out-File EmulatorManager-${{ github.ref_name }}-win-x64.zip.sha256
       - name: Publish
         uses: softprops/action-gh-release@v2
         with:
           files: |
             emulator-cli.exe
             emulator-cli.exe.sha256
+            EmulatorManager-${{ github.ref_name }}-win-x64.zip
+            EmulatorManager-${{ github.ref_name }}-win-x64.zip.sha256
           generate_release_notes: true

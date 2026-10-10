@@ -1,12 +1,17 @@
 using System.Net.Http;
+using System.Runtime.InteropServices;
 
 namespace EmulatorManager;
 
 /// <summary>Headless self-test: exercises the REST client without any window.</summary>
 public static class SelfTest
 {
+    [DllImport("kernel32.dll")]
+    private static extern bool AttachConsole(int dwProcessId);
+
     public static int Run(string baseUrl, string token)
     {
+        AttachConsole(-1);
         try
         {
             using var api = new Backend(baseUrl, token);

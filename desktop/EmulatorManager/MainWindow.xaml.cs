@@ -153,7 +153,7 @@ public partial class MainWindow : Window
         catch { /* keep last frame */ }
     }
 
-    private (int x, int y)? ToGuest(MouseEventArgs e)
+    private (int x, int y)? ToGuest(System.Windows.Input.MouseEventArgs e)
     {
         if (_frameW <= 0 || Screen.ActualWidth <= 0) return null;
         var p = e.GetPosition(Screen);
@@ -169,7 +169,7 @@ public partial class MainWindow : Window
         Screen.CaptureMouse();
     }
 
-    private void Screen_MouseMove(object sender, MouseEventArgs e) { /* swipe drawn on release */ }
+    private void Screen_MouseMove(object sender, System.Windows.Input.MouseEventArgs e) { /* swipe drawn on release */ }
 
     private async void Screen_MouseUp(object sender, MouseButtonEventArgs e)
     {
@@ -193,7 +193,7 @@ public partial class MainWindow : Window
         catch { /* ignore transient input errors */ }
     }
 
-    protected override async void OnKeyDown(KeyEventArgs e)
+    protected override async void OnKeyDown(System.Windows.Input.KeyEventArgs e)
     {
         base.OnKeyDown(e);
         var a = Selected();
@@ -220,10 +220,10 @@ public partial class MainWindow : Window
         catch { /* ignore */ }
     }
 
-    private async void BackBtn_Click(object sender, RoutedEventArgs e) => await Key(4);
-    private async void HomeBtn_Click(object sender, RoutedEventArgs e) => await Key(3);
-    private async void RecentBtn_Click(object sender, RoutedEventArgs e) => await Key(187);
-    private async Task Key(int code)
+    private async void BackBtn_Click(object sender, RoutedEventArgs e) => await SendKey(4);
+    private async void HomeBtn_Click(object sender, RoutedEventArgs e) => await SendKey(3);
+    private async void RecentBtn_Click(object sender, RoutedEventArgs e) => await SendKey(187);
+    private async Task SendKey(int code)
     {
         var a = Selected();
         if (a is null || _api is null || !a.Running) return;

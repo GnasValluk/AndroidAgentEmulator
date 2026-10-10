@@ -18,7 +18,9 @@ public partial class App : System.Windows.Application
         base.OnStartup(e);
         if (e.Args.Contains("--self-test"))
         {
-            int code = SelfTest.Run(BaseUrl, ResolveToken());
+            // Run off the UI thread: blocking on async code here would deadlock
+            // against the WPF dispatcher synchronization context.
+            int code = Task.Run(() => SelfTest.Run(BaseUrl, ResolveToken())).GetAwaiter().GetResult();
             Shutdown(code);
             return;
         }

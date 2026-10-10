@@ -77,7 +77,22 @@ Snapshots are offline `qemu-img` operations; stop the VM first.
 | `EMULATOR_ANDROID_API` | Version override |
 | `EMULATOR_MATRIX` | Version matrix path override |
 
-## Dashboard
+## Desktop app
+
+`desktop/EmulatorManager` is a WPF manager: device list, embedded display
+(screenshots + tap/swipe/keyboard via `/v1/adb/input`), start/stop,
+snapshots, settings, APK install, boot log, and a tray icon (minimize to
+tray, balloon on boot). It spawns `emulator-cli serve` itself. Headless
+check: `EmulatorManager.exe --self-test`. Build notes: `desktop/BUILD.md`.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File desktop\Install-App.ps1
+```
+
+Per-user install, no admin. Uninstall: `desktop\Uninstall-App.ps1`
+(or Add/Remove Programs).
+
+## Dashboard (browser)
 
 `serve` also hosts a management UI at `http://<host>:18037/` (no extra
 dependencies; the page calls the same REST API). Enter the API token once

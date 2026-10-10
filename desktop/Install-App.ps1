@@ -10,7 +10,7 @@ $root = Split-Path -Parent $PSScriptRoot
 $dest = Join-Path $env:LOCALAPPDATA "Programs\EmulatorManager"
 New-Item -ItemType Directory -Force -Path $dest | Out-Null
 
-$dotnet = Join-Path "D:\data\tools\dotnet\dotnet.exe"
+$dotnet = "D:\data\tools\dotnet\dotnet.exe"
 if (-not (Test-Path $dotnet)) { $dotnet = "dotnet" }
 if ($CliZip -ne "" -and (Test-Path $CliZip)) {
   Copy-Item (Join-Path $CliZip "*") $dest -Recurse -Force
