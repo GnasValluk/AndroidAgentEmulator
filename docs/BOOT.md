@@ -80,3 +80,19 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
   (`Success`), 401 without token. All passed.
 - `system-images;android-36;google_apis_playstore;x86_64` downloaded to
   `D:\data\android-sdk` for the integrity track (ships Play Store).
+
+## Second AVD: `a16ps` (playstore, 2026-10-10)
+
+- Live props: `user/release-keys` (`...026.D1...`), `ro.debuggable=0`,
+  boot completed, real Play Store (`Phonesky` 45.3.21). This is the best
+  emulator base for integrity work: release-keys + non-debuggable + Play
+  Store for licensing. DEVICE still needs a certified fingerprint.
+- `google_apis` images only carry a `LicenseChecker` stub under the
+  `com.android.vending` name (v1.8) — check `pm path` + version, not just
+  package presence.
+- Snapshots: `first-boot` (a16, 74M), `ps-first-boot` (a16ps, 68M) via
+  `emu-snapshot save|list`. The `adb emu` console only answers on the
+  `emulator-XXXX` serial, so the client maps loopback odd ports to it.
+- Second emulator takes adb ports 5556/5557; use `--adb-port 5557` for all
+  adb-backed commands. Do not run both emulators under host RAM pressure
+  (7.3 GB host here); stop one with `adb -s emulator-XXXX emu kill`.

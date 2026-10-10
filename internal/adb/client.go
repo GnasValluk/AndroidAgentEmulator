@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 )
-
 type Client struct {
 	Bin     string
 	Address string // e.g. 127.0.0.1:5555
@@ -93,4 +92,31 @@ func (c Client) Shell(args []string) (string, error) {
 // Screencap returns PNG bytes from `adb exec-out screencap -p`.
 func (c Client) Screencap() ([]byte, error) {
 	return c.runBytes("exec-out", "screencap", "-p")
+}
+
+// Emu runs `adb emu <args>` (emulator console: `avd snapshot save|list|...`).
+// The emu console only answers on the emulator serial (emulator-5554), not on
+// a manual TCP alias, so a loopback 127.0.0.1:<odd-port> address is mapped to
+// emulator-<port-1>. Plain QEMU images have no emu console and return an error.
+func (c Client) Emu(args ...string) (string, error) {
+	serial := c.Address
+	if host, port, ok := splitHostPort(c.Address); ok && (host == "127.0.0.1" || host == "localhost") && port%2 == 1 {
+		serial = fmt.Sprintf("emulator-%d", port-1)
+	}
+	full := append([]string{"-s", serial, "emu"}, args...)
+	cmd := exec.Command(c.Bin, full...)
+	out, err := cmd.CombinedOutput()
+	return string(out), err
+}
+
+func splitHostPort(addr string) (string, int, bool) {
+	i := strings.LastIndex(addr, ":")
+	if i < 0 {
+		return "", 0, false
+	}
+	var port int
+	if _, err := fmt.Sscanf(addr[i+1:], "%d", &port); err != nil {
+		return "", 0, false
+	}
+	return addr[:i], port, true
 }

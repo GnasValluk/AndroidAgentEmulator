@@ -23,6 +23,7 @@ import (
 func main() {
 	cfgPath := flag.String("config", "configs/default.json", "path to config JSON")
 	apiFlag := flag.String("api", "auto", "android version|api: auto|latest|<version e.g.16>|<api e.g.36> (matrix-driven, never hardcoded)")
+	adbPort := flag.Int("adb-port", 0, "adb TCP port override (e.g. 5557 for second emulator; default from config)")
 	flag.Parse()
 	args := flag.Args()
 	if len(args) == 0 {
@@ -43,6 +44,9 @@ func main() {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "version resolve:", err)
 		os.Exit(1)
+	}
+	if *adbPort != 0 {
+		cfg.Server.AdbPort = *adbPort
 	}
 	adbClient := adb.New(cfg.Server.AdbPort)
 
@@ -131,6 +135,30 @@ func main() {
 		}
 	case "snapshot":
 		snapCmd(args[1:], cfg, v)
+	case "emu-snapshot":
+		if len(args) < 2 {
+			fmt.Fprintln(os.Stderr, "usage: emu-snapshot save <name>|list")
+			os.Exit(2)
+		}
+		var out string
+		var err error
+		switch args[1] {
+		case "save":
+			if len(args) < 3 {
+				fmt.Fprintln(os.Stderr, "usage: emu-snapshot save <name>")
+				os.Exit(2)
+			}
+			out, err = adbClient.Emu("avd", "snapshot", "save", args[2])
+		case "list":
+			out, err = adbClient.Emu("avd", "snapshot", "list")
+		default:
+			fmt.Fprintln(os.Stderr, "unknown emu-snapshot subcommand:", args[1])
+			os.Exit(2)
+		}
+		fmt.Print(out)
+		if err != nil {
+			os.Exit(1)
+		}
 	case "screenshot":
 		out := "screen.png"
 		if len(args) >= 2 {
@@ -173,6 +201,7 @@ func usage() {
   adb-shell -- <cmd>  run shell command
   install <apk>  adb install -r
   snapshot list|create|restore|delete <name> (qcow2 offline, VM stopped)
+  emu-snapshot save <name>|list (live SDK emulator via adb emu)
   screenshot [out.png]  adb screencap to file
   view           scrcpy hint for remote viewing
   serve          expose open REST API for external access`)
