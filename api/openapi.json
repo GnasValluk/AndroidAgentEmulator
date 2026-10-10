@@ -1,0 +1,19 @@
+{
+  "openapi": "3.0.0",
+  "info": {"title": "AndroidAgentEmulator", "version": "0.3.0", "description": "Open REST for external access. Auth: Authorization: Bearer <EMULATOR_API_TOKEN>."},
+  "servers": [{"url": "http://{host}:5037/v1", "variables": {"host": {"default": "127.0.0.1"}}}],
+  "paths": {
+    "/status": {"get": {"summary": "Instance status", "responses": {"200": {"description": "ok"}}}},
+    "/version": {"get": {"summary": "Resolved Android version (dynamic, matrix-driven)", "responses": {"200": {"description": "ok"}}}},
+    "/integrity": {"get": {"summary": "Local Play Integrity readiness", "responses": {"200": {"description": "ok"}}}},
+    "/instances/start": {"post": {"summary": "Boot QEMU in background", "responses": {"201": {"description": "started"}, "409": {"description": "already running"}}}},
+    "/instances/stop": {"post": {"summary": "Kill QEMU", "responses": {"200": {"description": "stopped"}}}},
+    "/adb/props": {"get": {"summary": "Integrity-relevant getprops via adb", "responses": {"200": {"description": "ok"}}}},
+    "/adb/wait": {"get": {"summary": "Wait until sys.boot_completed=1", "responses": {"200": {"description": "booted"}}}},
+    "/apk/install": {"post": {"summary": "Upload raw APK bytes, installed via adb", "responses": {"200": {"description": "installed"}}}},
+    "/screen.png": {"get": {"summary": "Screenshot PNG via adb screencap", "responses": {"200": {"description": "png"}}}},
+    "/snapshots": {"get": {"summary": "List qcow2 snapshots", "responses": {"200": {"description": "ok"}}}, "post": {"summary": "Create snapshot ?name=", "responses": {"201": {"description": "created"}}}},
+    "/snapshots/restore": {"post": {"summary": "Restore snapshot ?name= (VM must be stopped)", "responses": {"200": {"description": "restored"}}}},
+    "/snapshots/delete": {"post": {"summary": "Delete snapshot ?name=", "responses": {"200": {"description": "deleted"}}}}
+  }
+}

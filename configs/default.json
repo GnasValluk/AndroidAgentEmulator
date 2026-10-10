@@ -1,0 +1,21 @@
+{
+  "profile": {
+    "name": "pixel-baseline",
+    "api_version": "auto",
+    "ram_mb": 4096,
+    "cpus": 4,
+    "gpu_mode": "virtio-gpu",
+    "boot_mode": "snapshot"
+  },
+  "server": {
+    "listen_addr": "127.0.0.1:5037",
+    "adb_port": 5555
+  },
+  "integrity": {
+    "verified_boot_state": "green",
+    "bootloader_locked": true,
+    "debuggable": false
+  },
+  "image_dir": "./images",
+  "qemu_bin": "qemu-system-x86_64"
+}

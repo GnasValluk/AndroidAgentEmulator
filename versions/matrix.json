@@ -1,0 +1,10 @@
+{
+  "latest_version": "16",
+  "updated_at": "2026-10-10",
+  "source": "developer.android.com/about/versions + dl.google.com SDK repository (CI refresh weekly)",
+  "entries": [
+    {"version": "16", "api": "36", "codename": "Baklava", "branch": "android-16.0.0_r1"},
+    {"version": "15", "api": "35", "codename": "VanillaIceCream", "branch": "android-15.0.0_r1"},
+    {"version": "14", "api": "34", "codename": "UpsideDownCake", "branch": "android-14.0.0_r1"}
+  ]
+}
