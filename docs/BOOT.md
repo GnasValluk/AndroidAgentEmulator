@@ -97,13 +97,11 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
   (7.3 GB host here); stop one with `adb -s emulator-XXXX emu kill`.
 
 ## Snapshot boot (2026-10-10)
-
 - `a16ps -snapshot ps-first-boot -no-snapshot-save`: `sys.boot_completed=1`
   in ~11 s. Cold boot of the same AVD took ~10 min. Named snapshots are the
   normal fast path; `-no-snapshot-save` keeps the snapshot pristine.
 
 ## Play Integrity live test (2026-10-10, blocked on sign-in)
-
 - `samples/integrity-app` (no Gradle; integrity 1.6.0 + tasks 18.4.1 AARs
   from Google Maven, javac + d8 + aapt2 + apksigner): installed and running
   on `a16ps`, classic request with random nonce + project 0.
@@ -115,3 +113,13 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
   account), then relaunch the app and read the token from logcat
   (`adb logcat -s IntegrityTest`). Decrypting the token needs a Google Cloud
   project number linked in Play Console (currently 0).
+
+## Performance (2026-10-10)
+
+- Software rendering (SwiftShader) at 1080x1920 on a 2 GB guest was visibly
+  laggy. Reduced to 720x1280 density 320 — 2.25x fewer pixels:
+  `adb shell wm size 720x1280`, `adb shell wm density 320`
+  (persists; revert with `wm size reset` + `wm density reset`).
+- Guest showed `kswapd` active (2 GB RAM, GMS-heavy image) and host had only
+  ~0.7 GB free of 7.3 GB. Free host RAM (close unused apps) before raising
+  guest RAM. Not rebooting mid sign-in to try `-gpu host` yet.
