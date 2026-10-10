@@ -41,6 +41,8 @@ type Config struct {
 	Integrity IntegrityConfig `json:"integrity"`
 	ImageDir  string          `json:"image_dir"`
 	QemuBin   string          `json:"qemu_bin"`
+	SdkRoot   string          `json:"sdk_root"` // ANDROID_SDK_ROOT or EMULATOR_SDK_ROOT
+	AvdHome   string          `json:"avd_home"` // ANDROID_AVD_HOME or EMULATOR_AVD_HOME
 }
 
 func Default() Config {
@@ -100,7 +102,29 @@ func Load(path string) (Config, error) {
 	if v := os.Getenv("EMULATOR_ANDROID_API"); v != "" {
 		cfg.Profile.APIVersion = v
 	}
+	if v := os.Getenv("EMULATOR_SDK_ROOT"); v != "" {
+		cfg.SdkRoot = v
+	} else if v := os.Getenv("ANDROID_SDK_ROOT"); v != "" {
+		cfg.SdkRoot = v
+	}
+	if v := os.Getenv("EMULATOR_AVD_HOME"); v != "" {
+		cfg.AvdHome = v
+	} else if v := os.Getenv("ANDROID_AVD_HOME"); v != "" {
+		cfg.AvdHome = v
+	}
 	return cfg, nil
+}
+
+// SdkRootResolved returns the SDK root or "" when unknown.
+func (c Config) SdkRootResolved() string { return c.SdkRoot }
+
+// AvdHomeResolved defaults to ~/.android/avd when unset.
+func (c Config) AvdHomeResolved() string {
+	if c.AvdHome != "" {
+		return c.AvdHome
+	}
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".android", "avd")
 }
 
 func (c Config) ConfigDir() string {

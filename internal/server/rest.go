@@ -1,16 +1,24 @@
 // Package server exposes an open REST API for external access.
 // Auth: Bearer token from EMULATOR_API_TOKEN. Bind 0.0.0.0 to allow LAN/external.
+// It also serves the management dashboard (no auth for the page itself; the
+// page sends the token stored in the browser).
 package server
 
 import (
+	"embed"
 	"encoding/json"
+	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/android-agent-emulator/emulator/internal/adb"
+	"github.com/android-agent-emulator/emulator/internal/avd"
 	"github.com/android-agent-emulator/emulator/internal/config"
 	"github.com/android-agent-emulator/emulator/internal/instance"
 	"github.com/android-agent-emulator/emulator/internal/integrity"
@@ -18,6 +26,9 @@ import (
 	"github.com/android-agent-emulator/emulator/internal/snapshot"
 	"github.com/android-agent-emulator/emulator/internal/version"
 )
+
+//go:embed web
+var webFS embed.FS
 
 type State struct {
 	mu      sync.Mutex
@@ -31,6 +42,7 @@ type State struct {
 func New(cfg config.Config, v version.Resolved) *http.ServeMux {
 	st := &State{Version: v.Version, API: v.APILevel, Branch: v.Branch}
 	adbClient := adb.New(cfg.Server.AdbPort)
+	avdMgr := avd.New(cfg.SdkRootResolved(), cfg.AvdHomeResolved(), cfg.ConfigDir())
 	mux := http.NewServeMux()
 	withAuth := func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -47,6 +59,13 @@ func New(cfg config.Config, v version.Resolved) *http.ServeMux {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(code)
 		_ = json.NewEncoder(w).Encode(x)
+	}
+	// adbFor honors ?port= so dashboards can target any running emulator.
+	adbFor := func(r *http.Request) adb.Client {
+		if p, err := strconv.Atoi(r.URL.Query().Get("port")); err == nil && p > 0 {
+			return adb.New(p)
+		}
+		return adbClient
 	}
 	refresh := func() {
 		if info, err := instance.Status(cfg); err == nil {
@@ -88,7 +107,7 @@ func New(cfg config.Config, v version.Resolved) *http.ServeMux {
 		write(w, 200, map[string]string{"status": "stopped"})
 	}))
 	mux.HandleFunc("/v1/adb/props", withAuth(func(w http.ResponseWriter, r *http.Request) {
-		props, err := adbClient.Props()
+		props, err := adbFor(r).Props()
 		if err != nil {
 			write(w, 502, map[string]string{"error": err.Error()})
 			return
@@ -96,7 +115,7 @@ func New(cfg config.Config, v version.Resolved) *http.ServeMux {
 		write(w, 200, props)
 	}))
 	mux.HandleFunc("/v1/adb/wait", withAuth(func(w http.ResponseWriter, r *http.Request) {
-		if err := adbClient.WaitForDevice(5 * time.Minute); err != nil {
+		if err := adbFor(r).WaitForDevice(5 * time.Minute); err != nil {
 			write(w, 504, map[string]string{"error": err.Error()})
 			return
 		}
@@ -119,7 +138,7 @@ func New(cfg config.Config, v version.Resolved) *http.ServeMux {
 			return
 		}
 		_ = tmp.Close()
-		out, err := adbClient.Install(tmp.Name())
+		out, err := adbFor(r).Install(tmp.Name())
 		if err != nil {
 			write(w, 502, map[string]string{"error": out + err.Error()})
 			return
@@ -127,7 +146,7 @@ func New(cfg config.Config, v version.Resolved) *http.ServeMux {
 		write(w, 200, map[string]string{"result": out})
 	}))
 	mux.HandleFunc("/v1/screen.png", withAuth(func(w http.ResponseWriter, r *http.Request) {
-		png, err := screen.Shot(adbClient)
+		png, err := screen.Shot(adbFor(r))
 		if err != nil {
 			write(w, 502, map[string]string{"error": err.Error()})
 			return
@@ -185,5 +204,183 @@ func New(cfg config.Config, v version.Resolved) *http.ServeMux {
 	mux.HandleFunc("/v1/openapi.json", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "api/openapi.json")
 	})
+	mux.HandleFunc("/v1/avds", withAuth(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			http.Error(w, "GET only", http.StatusMethodNotAllowed)
+			return
+		}
+		list, err := avdMgr.List()
+		if err != nil {
+			write(w, 502, map[string]string{"error": err.Error()})
+			return
+		}
+		if list == nil {
+			list = []avd.Info{}
+		}
+		write(w, 200, list)
+	}))
+	// /v1/avds/{name}/start|stop|snapshots|config|log
+	mux.HandleFunc("/v1/avds/", withAuth(func(w http.ResponseWriter, r *http.Request) {
+		rest := strings.TrimPrefix(r.URL.Path, "/v1/avds/")
+		name, action, _ := strings.Cut(rest, "/")
+		if !validAvdName(name) {
+			http.Error(w, "bad avd name", http.StatusBadRequest)
+			return
+		}
+		switch action {
+		case "start":
+			if r.Method != "POST" {
+				http.Error(w, "POST only", http.StatusMethodNotAllowed)
+				return
+			}
+			var opt avd.StartOptions
+			_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&opt)
+			info, err := avdMgr.Start(name, opt)
+			if err != nil {
+				write(w, 409, map[string]string{"error": err.Error()})
+				return
+			}
+			write(w, 201, info)
+		case "stop":
+			if r.Method != "POST" {
+				http.Error(w, "POST only", http.StatusMethodNotAllowed)
+				return
+			}
+			if err := avdMgr.Stop(name); err != nil {
+				write(w, 409, map[string]string{"error": err.Error()})
+				return
+			}
+			write(w, 200, map[string]string{"status": "stopped"})
+		case "snapshots":
+			if r.Method == "GET" {
+				list, err := avdMgr.List()
+				if err != nil {
+					write(w, 502, map[string]string{"error": err.Error()})
+					return
+				}
+				for _, a := range list {
+					if a.Name == name {
+						if a.Snapshots == nil {
+							a.Snapshots = []string{}
+						}
+						write(w, 200, a.Snapshots)
+						return
+					}
+				}
+				write(w, 404, map[string]string{"error": "unknown avd"})
+				return
+			}
+			if r.Method != "POST" {
+				http.Error(w, "GET or POST only", http.StatusMethodNotAllowed)
+				return
+			}
+			snap := r.URL.Query().Get("name")
+			if snap == "" {
+				write(w, 400, map[string]string{"error": "name required"})
+				return
+			}
+			port, err := avdAdbPort(avdMgr, name)
+			if err != nil {
+				write(w, 409, map[string]string{"error": err.Error()})
+				return
+			}
+			out, err := adb.New(port).Emu("avd", "snapshot", "save", snap)
+			if err != nil {
+				write(w, 502, map[string]string{"error": out + err.Error()})
+				return
+			}
+			write(w, 201, map[string]string{"result": out})
+		case "config":
+			if r.Method == "GET" {
+				list, err := avdMgr.List()
+				if err != nil {
+					write(w, 502, map[string]string{"error": err.Error()})
+					return
+				}
+				for _, a := range list {
+					if a.Name == name {
+						write(w, 200, a)
+						return
+					}
+				}
+				write(w, 404, map[string]string{"error": "unknown avd"})
+				return
+			}
+			if r.Method != "PUT" {
+				http.Error(w, "GET or PUT only", http.StatusMethodNotAllowed)
+				return
+			}
+			var p avd.ConfigPatch
+			if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&p); err != nil {
+				write(w, 400, map[string]string{"error": err.Error()})
+				return
+			}
+			set, err := avdMgr.PatchConfig(name, p)
+			if err != nil {
+				write(w, 409, map[string]string{"error": err.Error()})
+				return
+			}
+			write(w, 200, set)
+		case "log":
+			if r.Method != "GET" {
+				http.Error(w, "GET only", http.StatusMethodNotAllowed)
+				return
+			}
+			n := 80
+			if t, err := strconv.Atoi(r.URL.Query().Get("tail")); err == nil && t > 0 && t <= 500 {
+				n = t
+			}
+			out, err := avdMgr.LogTail(name, n)
+			if err != nil {
+				write(w, 404, map[string]string{"error": err.Error()})
+				return
+			}
+			write(w, 200, map[string]string{"log": out})
+		default:
+			http.Error(w, "unknown action", http.StatusNotFound)
+		}
+	}))
+	// Dashboard (page itself is public; API calls still need the token).
+	webSub, _ := fs.Sub(webFS, "web")
+	mux.HandleFunc("/app/", func(w http.ResponseWriter, r *http.Request) {
+		http.StripPrefix("/app/", http.FileServer(http.FS(webSub))).ServeHTTP(w, r)
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		b, _ := fs.ReadFile(webSub, "index.html")
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write(b)
+	})
 	return mux
+}
+
+func validAvdName(s string) bool {
+	if s == "" || len(s) > 64 {
+		return false
+	}
+	for _, c := range s {
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '-' || c == '.') {
+			return false
+		}
+	}
+	return true
+}
+
+func avdAdbPort(m *avd.Manager, name string) (int, error) {
+	list, err := m.List()
+	if err != nil {
+		return 0, err
+	}
+	for _, a := range list {
+		if a.Name == name {
+			if !a.Running {
+				return 0, fmt.Errorf("avd %q is not running", name)
+			}
+			return a.AdbPort, nil
+		}
+	}
+	return 0, fmt.Errorf("unknown avd %q", name)
 }

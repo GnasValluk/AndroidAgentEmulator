@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AndroidAgentEmulator</title>
+<link rel="stylesheet" href="/app/styles.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo">▣</span> AndroidAgentEmulator <span id="cli-ver" class="pill"></span></div>
+  <div class="head-right">
+    <input id="token" type="password" placeholder="API token (EMULATOR_API_TOKEN)" autocomplete="off">
+    <button id="save-token">Save</button>
+    <button id="refresh" class="ghost">↻ Refresh</button>
+  </div>
+</header>
+<main>
+  <section class="row">
+    <div class="card narrow">
+      <h3>Server</h3>
+      <div id="server-info" class="kv">…</div>
+    </div>
+    <div class="card narrow">
+      <h3>Integrity readiness</h3>
+      <div id="integrity" class="kv">…</div>
+    </div>
+  </section>
+  <section>
+    <div class="sec-head"><h2>Devices</h2><span id="dev-count" class="pill"></span></div>
+    <div id="devices" class="grid"></div>
+  </section>
+</main>
+<div id="toast"></div>
+<script src="/app/app.js"></script>
+</body>
+</html>

@@ -43,6 +43,38 @@ func (c Client) Connect() (string, error) {
 	return string(out), err
 }
 
+// Devices lists attached adb serials.
+func Devices() []string {
+	out, err := exec.Command("adb", "devices").Output()
+	if err != nil {
+		return nil
+	}
+	var serials []string
+	for _, line := range strings.Split(string(out), "\n") {
+		f := strings.Fields(strings.TrimSpace(line))
+		if len(f) >= 2 && f[1] == "device" && f[0] != "List" {
+			serials = append(serials, f[0])
+		}
+	}
+	return serials
+}
+
+// EmuAvdName asks a running emulator for its AVD name.
+func (c Client) EmuAvdName(serial string) (string, error) {
+	cmd := exec.Command(c.Bin, "-s", serial, "emu", "avd", "name")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		t := strings.TrimSpace(line)
+		if t != "" && t != "OK" {
+			return t, nil
+		}
+	}
+	return "", fmt.Errorf("no avd name in %q", string(out))
+}
+
 // WaitForDevice polls `adb shell getprop sys.boot_completed` until 1 or timeout.
 func (c Client) WaitForDevice(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
