@@ -114,6 +114,25 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
   (`adb logcat -s IntegrityTest`). Decrypting the token needs a Google Cloud
   project number linked in Play Console (currently 0).
 
+## Verdict after sign-in (2026-10-10): emulator wall, evidence-backed
+
+- Account present on device, checker installed from Play
+  (`installer=com.android.vending`), clean unrooted release-keys image,
+  network OK, `ro.debuggable=0`. Raw verdict: `appRecognitionVerdict`
+  and `appLicensingVerdict` both `UNEVALUATED`, NO `deviceRecognitionVerdict`
+  labels at all. Own API calls still never return, even signed in.
+- Cause: server-side emulator detection. No client-side change (props, root,
+  GMS version, account) can fix it; Google's servers decide from the hardware
+  attestation chain an emulator cannot produce.
+- Consequences: DEVICE and STRONG are unreachable on any emulator by design;
+  BASIC is also withheld (empty verdict) on detected emulators. Fingerprint
+  spoofing (other devices' identities) violates Play ToS with rolling bans
+  and is not implemented here.
+- What works: the repo verifier correctly DENYs such verdicts
+  (`samples/verify-play-integrity`, 10/10 selftests). Real green verdicts
+  need certified hardware; the same CLI/REST drives a physical device over
+  adb unchanged.
+
 ## Performance (2026-10-10)
 
 - Software rendering (SwiftShader) at 1080x1920 on a 2 GB guest was visibly
