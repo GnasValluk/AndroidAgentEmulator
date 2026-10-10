@@ -2,7 +2,6 @@
 package screen
 
 import (
-	"fmt"
 	"os/exec"
 
 	"github.com/android-agent-emulator/emulator/internal/adb"
@@ -10,12 +9,8 @@ import (
 
 // Shot captures `adb exec-out screencap -p` (PNG bytes).
 func Shot(c adb.Client) ([]byte, error) {
-	cmd := exec.Command(c.Bin, "-s", c.Address, "exec-out", "screencap", "-p")
-	out, err := cmd.Output()
+	out, err := c.Screencap()
 	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			return nil, fmt.Errorf("screencap: %s", string(ee.Stderr))
-		}
 		return nil, err
 	}
 	return out, nil

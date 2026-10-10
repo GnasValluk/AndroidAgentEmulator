@@ -51,5 +51,22 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
   falls back to AEHD, that driver install needs admin.
 - `google_apis` images (not `google_apis_playstore`) have no Play Store; Play
   Integrity verdicts need Play services present. The GMS GSI remains the
-  long-term image candidate once kernel/ramdisk boot is solved.
-- `MEETS_STRONG_INTEGRITY` cannot pass on any emulator; see `docs/INTEGRITY.md`.
+  long-term image candidate once kernel/ramdisk boot is solved. A
+  `google_apis_playstore` x86_64 image also exists for API 36
+  (`system-images;android-36;google_apis_playstore;x86_64`).
+
+## First-boot results (2026-10-10, AVD `a16`)
+
+- `sys.boot_completed=1`, Android 16, SDK 36.
+- Fingerprint `google/sdk_gphone64_x86_64/emu64xa:16/BE2A.250530.026.F3/13894323:userdebug/dev-keys`,
+  `ro.debuggable=1`, empty `verifiedbootstate`. This is a userdebug image, so
+  Play Integrity BASIC/DEVICE verdicts are out of reach on it; treat local
+  `integrity` output as config heuristic, and confirm live state with
+  `adb-props`.
+- Host has 7.3 GB RAM; the 2 GB guest thrashed during first-boot dexopt
+  (load ~20) and SystemUI showed a persistent ANR. Fixed by
+  `pm bg-dexopt-job --cancel` + letting the system settle; home screen is
+  clean afterwards. Do not raise guest RAM without checking host headroom.
+- CLI `adb-props`, `screenshot`, `install`, `adb-shell` work against the
+  running emulator after `adb connect 127.0.0.1:5555`; the adb client now
+  connects automatically before each command.

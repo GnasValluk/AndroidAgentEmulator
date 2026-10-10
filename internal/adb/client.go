@@ -19,10 +19,22 @@ func New(adbPort int) Client {
 }
 
 func (c Client) run(args ...string) (string, error) {
+	// Best-effort: register 127.0.0.1:<port> so both QEMU user-net forward
+	// and SDK emulator (visible as emulator-5554) answer on this address.
+	_, _ = c.Connect()
 	full := append([]string{"-s", c.Address}, args...)
 	cmd := exec.Command(c.Bin, full...)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
+}
+
+// RunBytes is run() for binary output (screencap).
+func (c Client) runBytes(args ...string) ([]byte, error) {
+	_, _ = c.Connect()
+	full := append([]string{"-s", c.Address}, args...)
+	cmd := exec.Command(c.Bin, full...)
+	out, err := cmd.Output()
+	return out, err
 }
 
 // Connect ensures adb server knows the emulator address.
@@ -76,4 +88,9 @@ func (c Client) Install(apkPath string) (string, error) {
 func (c Client) Shell(args []string) (string, error) {
 	full := append([]string{"shell"}, args...)
 	return c.run(full...)
+}
+
+// Screencap returns PNG bytes from `adb exec-out screencap -p`.
+func (c Client) Screencap() ([]byte, error) {
+	return c.runBytes("exec-out", "screencap", "-p")
 }
