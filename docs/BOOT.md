@@ -123,3 +123,15 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
 - Guest showed `kswapd` active (2 GB RAM, GMS-heavy image) and host had only
   ~0.7 GB free of 7.3 GB. Free host RAM (close unused apps) before raising
   guest RAM. Not rebooting mid sign-in to try `-gpu host` yet.
+
+## GPU host mode (2026-10-10)
+
+- Emulator sees both physical GPUs (NVIDIA RTX 3050 Ti Vulkan 1.4, AMD
+  iGPU) and passes its hardware-GPU check. Booted with `-gpu host`
+  (vulkan_mode=host, gles_mode=host); rendering is correct and the logged-in
+  snapshot state survived.
+- Save a snapshot BEFORE switching renderers
+  (`emu-snapshot save ps-logged-in`); loading a snapshot saved under a
+  different renderer logs `Change of GLES renderer detected` + snapshot
+  callback warning but still boots. Never run two instances of the same AVD
+  (FATAL without `-read-only`).
