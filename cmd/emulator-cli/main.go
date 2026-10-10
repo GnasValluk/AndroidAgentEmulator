@@ -20,11 +20,18 @@ import (
 	"github.com/android-agent-emulator/emulator/internal/version"
 )
 
+var cliVersion = "dev"
+
 func main() {
 	cfgPath := flag.String("config", "configs/default.json", "path to config JSON")
 	apiFlag := flag.String("api", "auto", "android version|api: auto|latest|<version e.g.16>|<api e.g.36> (matrix-driven, never hardcoded)")
 	adbPort := flag.Int("adb-port", 0, "adb TCP port override (e.g. 5557 for second emulator; default from config)")
+	showVer := flag.Bool("version", false, "print CLI version and exit")
 	flag.Parse()
+	if *showVer {
+		fmt.Println("emulator-cli", cliVersion)
+		return
+	}
 	args := flag.Args()
 	if len(args) == 0 {
 		usage()

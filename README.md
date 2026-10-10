@@ -4,6 +4,24 @@
 
 Headless Android emulator on Windows (QEMU + WHPX, VirtIO-GPU). CLI + REST + ADB over TCP.
 
+## Install (users)
+
+1. Install [Go](https://go.dev/dl/) 1.24+ (only needed to run from source;
+   or download `emulator-cli.exe` from
+   [Releases](https://github.com/GnasValluk/AndroidAgentEmulator/releases)).
+2. Get this repo (`git clone` or download ZIP) and install host tools:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/Install-DepsWindows.ps1 -ToolsDir D:\data\tools
+```
+
+3. Fetch the Android image and boot (see `docs/BOOT.md` for the full path):
+
+```powershell
+powershell -File scripts/Fetch-ImageWindows.ps1 -Version 16
+go run ./cmd/emulator-cli --api auto doctor
+```
+
 ## Requirements
 
 - Windows 10/11 with `Windows Hypervisor Platform` and `Virtual Machine Platform` enabled
