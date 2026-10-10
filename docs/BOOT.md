@@ -144,7 +144,6 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
   guest RAM. Not rebooting mid sign-in to try `-gpu host` yet.
 
 ## GPU host mode (2026-10-10)
-
 - Emulator sees both physical GPUs (NVIDIA RTX 3050 Ti Vulkan 1.4, AMD
   iGPU) and passes its hardware-GPU check. Booted with `-gpu host`
   (vulkan_mode=host, gles_mode=host); rendering is correct and the logged-in
@@ -154,3 +153,14 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
   different renderer logs `Change of GLES renderer detected` + snapshot
   callback warning but still boots. Never run two instances of the same AVD
   (FATAL without `-read-only`).
+- Correction: `adb root` never engages on playstore user builds
+  ("cannot run as root in production builds"); the earlier "restarting adbd
+  as root" left uid 2000. The verdict wall was hit with zero root involved.
+
+## Tablet AVD `a16tab` (2026-10-10)
+
+- `medium_tablet` device, playstore x86_64-36 image, `-gpu host`.
+- First boot stalled (adbd offline 16+ min, `odsign` crash-loop) due to data
+  corruption from a mid-boot kill; `-wipe-data` + clean boot fixed it.
+- Tuned to 1680x1050, animations off, dexopt cancelled; snapshot
+  `tab-first-boot` (69M) saved. Landscape home renders correctly.
