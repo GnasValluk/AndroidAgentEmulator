@@ -9,3 +9,5 @@ __pycache__/
 *.idsig
 samples/test-apk/out/
 samples/test-apk/ping.apk
+samples/integrity-app/out/
+samples/integrity-app/*.apk

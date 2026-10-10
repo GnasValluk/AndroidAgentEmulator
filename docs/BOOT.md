@@ -82,7 +82,6 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
   `D:\data\android-sdk` for the integrity track (ships Play Store).
 
 ## Second AVD: `a16ps` (playstore, 2026-10-10)
-
 - Live props: `user/release-keys` (`...026.D1...`), `ro.debuggable=0`,
   boot completed, real Play Store (`Phonesky` 45.3.21). This is the best
   emulator base for integrity work: release-keys + non-debuggable + Play
@@ -96,3 +95,23 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
 - Second emulator takes adb ports 5556/5557; use `--adb-port 5557` for all
   adb-backed commands. Do not run both emulators under host RAM pressure
   (7.3 GB host here); stop one with `adb -s emulator-XXXX emu kill`.
+
+## Snapshot boot (2026-10-10)
+
+- `a16ps -snapshot ps-first-boot -no-snapshot-save`: `sys.boot_completed=1`
+  in ~11 s. Cold boot of the same AVD took ~10 min. Named snapshots are the
+  normal fast path; `-no-snapshot-save` keeps the snapshot pristine.
+
+## Play Integrity live test (2026-10-10, blocked on sign-in)
+
+- `samples/integrity-app` (no Gradle; integrity 1.6.0 + tasks 18.4.1 AARs
+  from Google Maven, javac + d8 + aapt2 + apksigner): installed and running
+  on `a16ps`, classic request with random nonce + project 0.
+- Result: the token request hangs with no success/failure callback. Logcat
+  shows no GMS-side integrity activity; `dumpsys account` shows no Google
+  account and Play Store sits on the Sign-in page. The request cannot complete
+  until a user signs in.
+- Next: sign in via `scrcpy -s emulator-5554` (interactive, your own
+  account), then relaunch the app and read the token from logcat
+  (`adb logcat -s IntegrityTest`). Decrypting the token needs a Google Cloud
+  project number linked in Play Console (currently 0).
