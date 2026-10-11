@@ -80,7 +80,15 @@ public partial class App : System.Windows.Application
 
     internal static void EnsureBackend()
     {
-        if (IsUp()) return;
+        if (IsUp() && BackendHealthy())
+            return;
+        // A stale serve (old version, wrong token/env) is holding the port.
+        // Only our own backend binary is ever killed here.
+        foreach (var p in Process.GetProcessesByName("emulator-cli"))
+        {
+            try { p.Kill(); } catch { /* best effort */ }
+        }
+        Thread.Sleep(1500);
         var psi = new ProcessStartInfo
         {
             FileName = CliPath,
@@ -111,6 +119,19 @@ public partial class App : System.Windows.Application
             using var res = http.GetAsync(BaseUrl + "/v1/version").GetAwaiter().GetResult();
             return res.StatusCode == System.Net.HttpStatusCode.OK ||
                    res.StatusCode == System.Net.HttpStatusCode.Unauthorized;
+        }
+        catch { return false; }
+    }
+
+    internal static bool BackendHealthy()
+    {
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            var req = new HttpRequestMessage(HttpMethod.Get, BaseUrl + "/v1/avds");
+            req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Token);
+            using var res = http.Send(req);
+            return res.IsSuccessStatusCode;
         }
         catch { return false; }
     }
