@@ -28,10 +28,10 @@ function Get-RemotePackage($RepoUrl, $Path) {
     if ($b.Value -match '<major>(\d+)</major>\s*<minor>(\d+)</minor>\s*<micro>(\d+)</micro>') {
       $rev = @([int]$Matches[1], [int]$Matches[2], [int]$Matches[3])
     }
-    $urls = [regex]::Matches($b.Value, '<url>([^<]*win[^<]*\.zip)</url>', 'IgnoreCase') |
-      ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notmatch 'arm64' }
+    $urls = [regex]::Matches($b.Value, '<url>([^<]*[-_]win(?:64|32)?\.zip)</url>', 'IgnoreCase') |
+      ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notmatch 'darwin|arm64' }
     if ($urls.Count -eq 0) {
-      $urls = [regex]::Matches($b.Value, '<url>([^<]+\.zip)</url>') | ForEach-Object { $_.Groups[1].Value }
+      $urls = [regex]::Matches($b.Value, '<url>([^<]+\.zip)</url>') | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notmatch 'darwin' }
     }
     if ($urls.Count -eq 0) { continue }
     if (($rev[0] -gt $bestRev[0]) -or ($rev[0] -eq $bestRev[0] -and ($rev[1] -gt $bestRev[1] -or ($rev[1] -eq $bestRev[1] -and $rev[2] -ge $bestRev[2])))) {
