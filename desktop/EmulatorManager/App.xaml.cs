@@ -91,11 +91,8 @@ public partial class App : System.Windows.Application
         };
         psi.Environment["EMULATOR_LISTEN_ADDR"] = "127.0.0.1:18037";
         psi.Environment["EMULATOR_API_TOKEN"] = Token;
-        foreach (var k in new[] { "ANDROID_SDK_ROOT", "ANDROID_AVD_HOME" })
-        {
-            var v = Environment.GetEnvironmentVariable(k);
-            if (!string.IsNullOrEmpty(v)) psi.Environment[k] = v;
-        }
+        foreach (var (key, value) in DiscoverSdkEnv())
+            psi.Environment[key] = value;
         _serveProc = Process.Start(psi);
         var deadline = DateTime.UtcNow.AddSeconds(45);
         while (DateTime.UtcNow < deadline)
@@ -116,5 +113,37 @@ public partial class App : System.Windows.Application
                    res.StatusCode == System.Net.HttpStatusCode.Unauthorized;
         }
         catch { return false; }
+    }
+
+    /// <summary>
+    /// Locate SDK + AVD dirs: explicit env first, then well-known locations.
+    /// Always set for the backend child so the installed app works without
+    /// any user-side environment configuration.
+    /// </summary>
+    internal static Dictionary<string, string> DiscoverSdkEnv()
+    {
+        var out_ = new Dictionary<string, string>();
+        string? SdkAt(string d) =>
+            File.Exists(Path.Combine(d, "emulator", "emulator.exe")) ? d : null;
+        var sdk = Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT")
+            ?? Environment.GetEnvironmentVariable("EMULATOR_SDK_ROOT")
+            ?? SdkAt(@"D:\data\android-sdk")
+            ?? SdkAt(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Android\Sdk"))
+            ?? SdkAt(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @"Android\Sdk"));
+        if (sdk is not null) out_["ANDROID_SDK_ROOT"] = sdk;
+        bool AvdAt(string d) => Directory.Exists(d);
+        var avd = Environment.GetEnvironmentVariable("ANDROID_AVD_HOME")
+            ?? Environment.GetEnvironmentVariable("EMULATOR_AVD_HOME");
+        if (avd is null)
+        {
+            foreach (var cand in new[]
+            {
+                @"D:\data\avd",
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".android\avd"),
+            })
+                if (AvdAt(cand)) { avd = cand; break; }
+        }
+        if (avd is not null) out_["ANDROID_AVD_HOME"] = avd;
+        return out_;
     }
 }
