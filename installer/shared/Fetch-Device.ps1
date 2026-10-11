@@ -51,8 +51,13 @@ function Get-RemotePackage($RepoUrl, $Path) {
 function Expand-Dl($Url, $DestDir, $Base) {
   if ($Url -notmatch '^https?://') { $Url = $Base + $Url }
   $zip = Join-Path $env:TEMP ("fetch-" + [IO.Path]::GetFileName($Url))
-  Write-Host "Downloading $([IO.Path]::GetFileName($Url))"
-  curl.exe -L --retry 3 -o $zip $Url
+  $ok = $false
+  for ($i = 1; $i -le 5 -and -not $ok; $i++) {
+    Write-Host "Downloading $([IO.Path]::GetFileName($Url)) (attempt $i)"
+    curl.exe -L --retry 3 --retry-all-errors -C - -o $zip $Url
+    if ($LASTEXITCODE -eq 0) { $ok = $true } else { Start-Sleep 5 }
+  }
+  if (-not $ok) { throw "download failed after retries: $Url" }
   Expand-Archive $zip -DestinationPath $DestDir -Force
   Remove-Item $zip -Force
 }
