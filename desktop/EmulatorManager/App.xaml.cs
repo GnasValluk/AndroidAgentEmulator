@@ -57,7 +57,7 @@ public partial class App : System.Windows.Application
         var f = Path.Combine(AppDataDir(), "token.txt");
         if (File.Exists(f)) return File.ReadAllText(f).Trim();
         var token = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
-        File.WriteAllText(f, token);
+        File.WriteAllText(f, token, new System.Text.UTF8Encoding(false));
         return token;
     }
 
