@@ -58,6 +58,7 @@ function cardHtml(d) {
         : `<select data-role="gpu"><option>host</option><option>swiftshader_indirect</option><option>auto</option></select>
            <select data-role="snap"><option value="">(default boot)</option>${(d.snapshots || []).map(s => `<option>${s}</option>`).join("")}</select>
            <label class="tag"><input type="checkbox" data-role="nosave" checked> no-save</label>
+           <label class="tag"><input type="checkbox" data-role="showwin" checked> window</label>
            <button data-act="start">Start</button>`}
     </div>
     ${d.running ? `<img class="preview" data-role="preview" alt="live preview">` : ""}
@@ -130,7 +131,7 @@ async function onClick(e) {
         gpu: $('[data-role=gpu]', card).value,
         snapshot: $('[data-role=snap]', card).value,
         no_save: $('[data-role=nosave]', card).checked,
-        no_window: true,
+        no_window: !$('[data-role=showwin]', card).checked,
       };
       await api(`/v1/avds/${name}/start`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       toast(name + " starting…");
@@ -144,7 +145,7 @@ async function onClick(e) {
       toast("snapshot " + n + " saved");
     } else if (act === "boot-snap") {
       await api(`/v1/avds/${name}/start`, { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gpu: "host", snapshot: btn.dataset.snap, no_save: true, no_window: true }) });
+        body: JSON.stringify({ gpu: "host", snapshot: btn.dataset.snap, no_save: true, no_window: false }) });
       toast(name + " booting " + btn.dataset.snap + "…");
     } else if (act === "apply-cfg") {
       const patch = {};

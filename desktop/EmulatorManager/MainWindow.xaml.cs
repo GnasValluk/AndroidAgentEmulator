@@ -101,7 +101,7 @@ public partial class MainWindow : Window
             {
                 gpu = ((ComboBoxItem?)BootGpu.SelectedItem)?.Content?.ToString() ?? "host",
                 snapshot = BootSnap.SelectedItem?.ToString() ?? "",
-                no_save = true, no_window = true,
+                no_save = true, no_window = BootWindow.IsChecked != true,
             });
             StatusText.Text = $"{a.Name} starting…";
             _ = WaitBootAsync(a.Name, a.Adb_port > 0 ? a.Adb_port : 5555);
@@ -239,6 +239,36 @@ public partial class MainWindow : Window
     }
 
     private async void ShotBtn_Click(object sender, RoutedEventArgs e) => await RefreshPreview();
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumWindowsProc cb, System.IntPtr extra);
+    private delegate bool EnumWindowsProc(System.IntPtr hWnd, System.IntPtr extra);
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern int GetWindowText(System.IntPtr hWnd, System.Text.StringBuilder buf, int n);
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(System.IntPtr hWnd);
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool ShowWindow(System.IntPtr hWnd, int cmd);
+
+    private void FocusBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var a = Selected();
+        if (a is null) return;
+        var want = a.Name.ToLowerInvariant();
+        System.IntPtr found = System.IntPtr.Zero;
+        EnumWindows((h, _) =>
+        {
+            var sb = new System.Text.StringBuilder(256);
+            if (GetWindowText(h, sb, 256) > 0 && sb.ToString().ToLowerInvariant().Contains(want))
+            {
+                found = h;
+                return false;
+            }
+            return true;
+        }, System.IntPtr.Zero);
+        if (found != System.IntPtr.Zero) { ShowWindow(found, 9); SetForegroundWindow(found); }
+        else StatusText.Text = "no emulator window found (boot with Show window on)";
+    }
 
     private async void SaveSnap_Click(object sender, RoutedEventArgs e)
     {

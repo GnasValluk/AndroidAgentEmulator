@@ -49,6 +49,8 @@
             <ComboBoxItem Content="swiftshader_indirect"/>
             <ComboBoxItem Content="auto"/>
           </ComboBox>
+          <CheckBox x:Name="BootWindow" Content="Show window" IsChecked="True" VerticalAlignment="Center"
+                    Foreground="#8B96B0" ToolTip="Real-time emulator window (smoother than polled preview)"/>
         </StackPanel>
         <ListBox x:Name="AvdList" Background="Transparent" BorderThickness="0" Foreground="#E8EDF7"
                  SelectionChanged="AvdList_SelectionChanged" Margin="6,0,6,10">
@@ -90,6 +92,7 @@
                        ToolTip="Type here, Enter sends text"/>
               <Button Content="Send" Click="SendText_Click"/>
               <Button Content="Screenshot" Click="ShotBtn_Click"/>
+              <Button Content="Focus window" Click="FocusBtn_Click"/>
             </StackPanel>
             <Border Background="Black" CornerRadius="10" BorderBrush="#2A3550" BorderThickness="1">
               <Image x:Name="Screen" Stretch="Uniform"
