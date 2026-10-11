@@ -86,10 +86,10 @@ if (-not (Test-Path (Join-Path $sdk ($sysdir + "\system.img")))) {
   Expand-Dl $u (Join-Path $sdk "system-images") $base
   # sys-img zips extract into a single folder; relocate it under the package path.
   $found = Get-ChildItem (Join-Path $sdk "system-images") -Recurse -Filter "system.img" -ErrorAction SilentlyContinue | Select-Object -First 1
-  $target = Join-Path $sdk $sysdir
-  if ($found -and ((Split-Path $found.FullName) -ne $target)) {
-    New-Item -ItemType Directory -Force -Path $target | Out-Null
-    Move-Item (Join-Path (Split-Path $found.FullName) "*") $target -Force
+  $sysTarget = Join-Path $sdk $sysdir
+  if ($found -and ((Split-Path $found.FullName) -ne $sysTarget)) {
+    New-Item -ItemType Directory -Force -Path $sysTarget | Out-Null
+    Move-Item (Join-Path (Split-Path $found.FullName) "*") $sysTarget -Force
   }
 }
 # 3) AVD ini + config from template (always refresh text, keep userdata)
