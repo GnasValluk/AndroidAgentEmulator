@@ -28,15 +28,21 @@ function Get-RemotePackage($RepoUrl, $Path) {
     if ($b.Value -match '<major>(\d+)</major>\s*<minor>(\d+)</minor>\s*<micro>(\d+)</micro>') {
       $rev = @([int]$Matches[1], [int]$Matches[2], [int]$Matches[3])
     }
-    $urls = [regex]::Matches($b.Value, '<url>([^<]*[-_]win(?:64|32)?\.zip)</url>', 'IgnoreCase') |
-      ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notmatch 'darwin|arm64' }
+    $all = [regex]::Matches($b.Value, '<url>([^<]+\.zip)</url>') | ForEach-Object { $_.Groups[1].Value }
+    $urls = @($all | Where-Object { $_ -match 'windows' -and $_ -notmatch 'arm64' })
     if ($urls.Count -eq 0) {
-      $urls = [regex]::Matches($b.Value, '<url>([^<]+\.zip)</url>') | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notmatch 'darwin' }
+      $urls = @($all | Where-Object { $_ -match '[-_]win\.' -and $_ -notmatch 'darwin|arm64|linux' })
+    }
+    if ($urls.Count -eq 0 -and @($all).Count -eq 1) {
+      $urls = @($all)  # device images ship one zip (no OS variants)
     }
     if ($urls.Count -eq 0) { continue }
-    if (($rev[0] -gt $bestRev[0]) -or ($rev[0] -eq $bestRev[0] -and ($rev[1] -gt $bestRev[1] -or ($rev[1] -eq $bestRev[1] -and $rev[2] -ge $bestRev[2])))) {
-      $bestRev = $rev; $best = $urls[0]
+    $newer = $false
+    for ($i = 0; $i -lt 3; $i++) {
+      if ($rev[$i] -gt $bestRev[$i]) { $newer = $true; break }
+      if ($rev[$i] -lt $bestRev[$i]) { break }
     }
+    if ($newer) { $bestRev = $rev; $best = $urls[0] }
   }
   if (-not $best) { throw "no windows zip for $Path" }
   return $best
