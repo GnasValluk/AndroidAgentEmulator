@@ -33,14 +33,3 @@ jobs:
         with:
           name: emulator-cli-windows-amd64
           path: emulator-cli.exe
-  desktop:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "8.0.x"
-      - name: Publish
-        run: dotnet publish desktop/EmulatorManager/EmulatorManager.csproj -c Release -o desktop/EmulatorManager/publish --nologo -v quiet
-      - name: Self-test binary exists
-        run: Test-Path desktop/EmulatorManager/publish/EmulatorManager.exe
