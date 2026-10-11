@@ -179,6 +179,13 @@ func (m *Manager) Start(name string, opt StartOptions) (map[string]any, error) {
 	}
 	defer log.Close()
 	cmd := exec.Command(m.emulatorBin(), args...)
+	cmd.Env = os.Environ()
+	if m.SdkRoot != "" {
+		cmd.Env = append(cmd.Env, "ANDROID_SDK_ROOT="+m.SdkRoot)
+	}
+	if m.AvdHome != "" {
+		cmd.Env = append(cmd.Env, "ANDROID_AVD_HOME="+m.AvdHome)
+	}
 	cmd.Stdout = log
 	cmd.Stderr = log
 	if err := cmd.Start(); err != nil {
