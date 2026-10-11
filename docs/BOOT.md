@@ -4,10 +4,10 @@
 
 - Vanilla QEMU 11.1.0 + WHPX boots (SeaBIOS probe passes, no accelerator errors).
 - GSI `system.img` (Android 16, x86_64+GMS, build `BP2A.250605.031.A3`, SHA-256 verified,
-  fingerprint `google/gsi_gms_x86_64/generic_x86_64:16/.../release-keys`) is on disk
-  under `images/gsi/`. A GSI is system-only: no kernel/ramdisk ships with it, so it
-  cannot boot under vanilla QEMU without a matching kernel + first-stage ramdisk.
-  That work is not done here.
+  fingerprint `google/gsi_gms_x86_64/generic_x86_64:16/.../release-keys`) was
+  downloaded and verified, then removed (4.6 GB) since vanilla QEMU cannot
+  boot it without a kernel/ramdisk. URL + checksum stay in
+  `versions/matrix.json` for reference.
 - First boot uses the official SDK emulator (QEMU fork with ranchu board + WHPX
   support) with the `system-images;android-36;google_apis;x86_64` image.
 
