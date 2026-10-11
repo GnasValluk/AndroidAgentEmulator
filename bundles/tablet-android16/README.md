@@ -1,29 +1,14 @@
 # Tablet Android 16
 
-Standalone bundle. No manager app: double-click and use.
+Install with the common setup (recommended):
 
-- AVD `a16tab` (medium_tablet, Play Store image, Android 16 / API 36)
-- Boots windowed with GPU host, 1680x1050, animations off
-- Fast snapshot `<avd>-fast` reused automatically
+1. Run `installer/Output/TabletLab-Setup-0.4.0.exe`
+   (or build it: `"D:\data\Inno Setup 6\ISCC.exe" installer\TabletLab.iss`)
+2. Tick **Tablet Android 16**, choose the install folder and shortcuts
+3. Double-click the **Tablet Android 16** icon
 
-## Install (once)
-
-```powershell
-powershell -ExecutionPolicy Bypass -File Setup.ps1
-```
-
-Needs: Windows Hypervisor Platform enabled, ~4 GB free disk for the image
-plus the shared Android SDK (reused across bundles).
-
-## Run
-
-Double-click `Launch.bat`, or:
-
-```powershell
-powershell -File Launch.ps1
-```
-
-First boot takes ~10 min (one time); later boots take seconds from snapshot.
+First launch downloads the image (~3 GB, one time), then boots in ~10 min;
+later launches take seconds from snapshot.
 
 ## Files and apps
 
