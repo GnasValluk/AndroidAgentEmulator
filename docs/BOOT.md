@@ -158,9 +158,20 @@ in `configs/default.json` and `internal/adb`, so `wait`, `adb-props`,
   as root" left uid 2000. The verdict wall was hit with zero root involved.
 
 ## Tablet AVD `a16tab` (2026-10-10)
-
 - `medium_tablet` device, playstore x86_64-36 image, `-gpu host`.
 - First boot stalled (adbd offline 16+ min, `odsign` crash-loop) due to data
   corruption from a mid-boot kill; `-wipe-data` + clean boot fixed it.
 - Tuned to 1680x1050, animations off, dexopt cancelled; snapshot
   `tab-first-boot` (69M) saved. Landscape home renders correctly.
+
+## Lite AVD `a16lite` (2026-10-11, daily-use device)
+- Same tablet profile, `default` (AOSP, no GMS) x86_64-36 image:
+  system.img 1.9 GB vs 2.3 GB playstore. Fingerprint
+  `Android/sdk_phone64_x86_64/emu64x:16/.../userdebug/test-keys`.
+- Guest reports ~4 GB RAM (generous default on this image), no GMS/dexopt
+  weight. Tuned to 1680x1050, animations off; snapshot `lite-first-boot`
+  (75M). Boots windowed (`-gpu host`) for real-time display.
+- No Play Store/services: unsuitable for the integrity track, intended for
+  smooth daily use + automation. MuMu will still lead on raw game
+  smoothness (custom hypervisor + tuned images); this is the lightest
+  official-image path.
