@@ -77,20 +77,23 @@ Snapshots are offline `qemu-img` operations; stop the VM first.
 | `EMULATOR_ANDROID_API` | Version override |
 | `EMULATOR_MATRIX` | Version matrix path override |
 
-## Desktop app
+## Device bundles (no manager needed)
 
-`desktop/EmulatorManager` is a WPF manager: device list, embedded display
-(screenshots + tap/swipe/keyboard via `/v1/adb/input`), start/stop,
-snapshots, settings, APK install, boot log, and a tray icon (minimize to
-tray, balloon on boot). It spawns `emulator-cli serve` itself. Headless
-check: `EmulatorManager.exe --self-test`. Build notes: `desktop/BUILD.md`.
+Per-device standalone packages: download, set up once, double-click to run.
+Each boots straight into the emulator window (real-time display).
+
+- `bundles/tablet-android16` — AVD `a16tab`, Android 16 + Play Store
+- `bundles/tablet-android15` — AVD `a15tab`, Android 15 + Play Store
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File desktop\Install-App.ps1
+powershell -ExecutionPolicy Bypass -File bundles\tablet-android16\Setup.ps1
+# then double-click bundles\tablet-android16\Launch.bat
 ```
 
-Per-user install, no admin. Uninstall: `desktop\Uninstall-App.ps1`
-(or Add/Remove Programs).
+APK files install by dropping them onto the emulator window; other files
+via `Send-File.ps1` (adb push to Download). The CLI (`emulator-cli`,
+`install`, `screenshot`, `adb-shell`, `serve`) works against any running
+bundle unchanged.
 
 ## Dashboard (browser)
 

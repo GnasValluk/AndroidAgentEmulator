@@ -265,6 +265,29 @@ func (m *Manager) PatchConfig(name string, p ConfigPatch) (map[string]string, er
 	return set, nil
 }
 
+// SnapshotsStored lists snapshots from storage without a running instance
+// (`emulator -avd <name> -snapshot-list`).
+func (m *Manager) SnapshotsStored(name string) ([]string, error) {
+	cmd := exec.Command(m.emulatorBin(), "-avd", name, "-snapshot-list")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("snapshot-list: %v: %s", err, string(out))
+	}
+	return parseSnapshotList(string(out)), nil
+}
+
+func parseSnapshotList(out string) []string {
+	var names []string
+	for _, line := range strings.Split(out, "\n") {
+		f := strings.Fields(strings.TrimSpace(line))
+		// Rows look like: --  <tag>  <size>  <date>  <clock>
+		if len(f) >= 2 && f[0] == "--" {
+			names = append(names, f[1])
+		}
+	}
+	return names
+}
+
 // LogTail returns the last n lines of the UI boot log. When the AVD was
 // started outside the dashboard, it falls back to the newest boot*.log in
 // the .avd dir or the AVD home dir.

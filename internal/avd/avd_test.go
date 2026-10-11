@@ -47,8 +47,15 @@ func TestListReadsAVD(t *testing.T) {
 	}
 }
 
-func TestDecodeLogFile(t *testing.T) {
-	// UTF-16LE with BOM
+func TestParseSnapshotList(t *testing.T) {
+	sample := "List of snapshots present on all disks:\nID        TAG                 VM SIZE\n--        tab-first-boot          69M 2026-10-10 21:18:45   00:05:34\n--        default_boot            70M 2026-10-10 20:00:00   00:01:00\n"
+	got := parseSnapshotList(sample)
+	if len(got) != 2 || got[0] != "tab-first-boot" || got[1] != "default_boot" {
+		t.Fatalf("got %v", got)
+	}
+}
+
+func TestDecodeLogFile(t *testing.T) { // UTF-16LE with BOM
 	raw := []byte{0xFF, 0xFE, 'h', 0, 'i', 0, '\n', 0}
 	if got := string(decodeLogFile(raw)); got != "hi\n" {
 		t.Fatalf("bom decode got %q", got)

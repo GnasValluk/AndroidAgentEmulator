@@ -169,8 +169,9 @@ func main() {
 		if err != nil {
 			os.Exit(1)
 		}
-	case "set-config":
-		// usage: set-config <avd> ram_mb=2560 cpus=4 width=1680 height=1050 density=320
+	case "boot-avd":
+		bootAvd(args[1:], cfg)
+	case "set-config": // usage: set-config <avd> ram_mb=2560 cpus=4 width=1680 height=1050 density=320
 		if len(args) < 3 {
 			fmt.Fprintln(os.Stderr, "usage: set-config <avd> <key=value>... (avd must be stopped)")
 			os.Exit(2)
@@ -229,9 +230,110 @@ func usage() {
   snapshot list|create|restore|delete <name> (qcow2 offline, VM stopped)
   emu-snapshot save <name>|list (live SDK emulator via adb emu)
   set-config <avd> k=v... (ram_mb cpus width height density; stopped only)
+  boot-avd --avd NAME [--snapshot auto|NAME] [--gpu host] [--tune WxH] [--save-snap] [--headless]
   screenshot [out.png]  adb screencap to file
   view           scrcpy hint for remote viewing
   serve          expose open REST API for external access`)
+}
+
+// bootAvd boots an AVD in a real window (default), waits for boot, applies
+// light tuning (resolution + animations off), and optionally saves a fast
+// snapshot named "<avd>-fast".
+func bootAvd(args []string, cfg config.Config) {
+	fs := flag.NewFlagSet("boot-avd", flag.ContinueOnError)
+	avdName := fs.String("avd", "", "avd name (required)")
+	snap := fs.String("snapshot", "auto", "snapshot to load, '' for cold boot, 'auto' picks <avd>-fast or first stored")
+	gpu := fs.String("gpu", "host", "gpu mode")
+	tune := fs.String("tune", "", "resolution WxH applied after boot (e.g. 1680x1050)")
+	saveSnap := fs.Bool("save-snap", false, "save <avd>-fast snapshot after boot")
+	headless := fs.Bool("headless", false, "hide emulator window")
+	if err := fs.Parse(args); err != nil {
+		os.Exit(2)
+	}
+	if *avdName == "" {
+		fmt.Fprintln(os.Stderr, "boot-avd: --avd required")
+		os.Exit(2)
+	}
+	mgr := avd.New(cfg.SdkRootResolved(), cfg.AvdHomeResolved(), cfg.ConfigDir())
+	want := *snap
+	if want == "auto" {
+		want = ""
+		if stored, err := mgr.SnapshotsStored(*avdName); err == nil && len(stored) > 0 {
+			want = stored[0]
+			for _, s := range stored {
+				if s == *avdName+"-fast" {
+					want = s
+					break
+				}
+			}
+		}
+	}
+	before := adb.Devices()
+	info, err := mgr.Start(*avdName, avd.StartOptions{GPU: *gpu, Snapshot: want, NoSave: true, NoWindow: *headless})
+	if err != nil {
+		fatal(err)
+	}
+	fmt.Println("started", info)
+	serial := waitNewEmulator(before, 90*time.Second)
+	if serial == "" {
+		fatal(fmt.Errorf("no new emulator appeared; check the emulator window / log"))
+	}
+	fmt.Println("serial", serial)
+	port := adbPortOfSerial(serial)
+	client := adb.New(port)
+	if err := client.WaitForDevice(12 * time.Minute); err != nil {
+		fatal(err)
+	}
+	fmt.Println("boot_completed=1")
+	if *tune != "" {
+		w, h, ok := strings.Cut(*tune, "x")
+		if !ok {
+			fatal(fmt.Errorf("bad --tune %q, want WxH", *tune))
+		}
+		if out, err := client.Shell([]string{"wm", "size", w + "x" + h}); err != nil {
+			fmt.Println("tune wm size:", out, err)
+		}
+	}
+	for _, kv := range [][2]string{
+		{"window_animation_scale", "0"}, {"transition_animation_scale", "0"}, {"animator_duration_scale", "0"},
+	} {
+		_, _ = client.Shell([]string{"settings", "put", "global", kv[0], kv[1]})
+	}
+	fmt.Println("tuned (resolution + animations off)")
+	if *saveSnap {
+		name := *avdName + "-fast"
+		out, err := client.Emu("avd", "snapshot", "save", name)
+		fmt.Print(out)
+		if err != nil {
+			fatal(err)
+		}
+		fmt.Println("snapshot saved:", name)
+	}
+}
+
+func adbPortOfSerial(serial string) int {
+	n, err := strconv.Atoi(strings.TrimPrefix(serial, "emulator-"))
+	if err != nil {
+		return 5555
+	}
+	return n + 1
+}
+
+func waitNewEmulator(before []string, timeout time.Duration) string {
+	known := map[string]bool{}
+	for _, s := range before {
+		known[s] = true
+	}
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		for _, s := range adb.Devices() {
+			if strings.HasPrefix(s, "emulator-") && !known[s] {
+				return s
+			}
+		}
+		time.Sleep(3 * time.Second)
+	}
+	return ""
 }
 
 func parseConfigPatch(kvs []string) (avd.ConfigPatch, error) {
