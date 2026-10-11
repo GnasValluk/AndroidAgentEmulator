@@ -7,9 +7,12 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/android-agent-emulator/emulator/internal/adb"
+	"github.com/android-agent-emulator/emulator/internal/avd"
 	"github.com/android-agent-emulator/emulator/internal/config"
 	"github.com/android-agent-emulator/emulator/internal/instance"
 	"github.com/android-agent-emulator/emulator/internal/integrity"
@@ -166,6 +169,22 @@ func main() {
 		if err != nil {
 			os.Exit(1)
 		}
+	case "set-config":
+		// usage: set-config <avd> ram_mb=2560 cpus=4 width=1680 height=1050 density=320
+		if len(args) < 3 {
+			fmt.Fprintln(os.Stderr, "usage: set-config <avd> <key=value>... (avd must be stopped)")
+			os.Exit(2)
+		}
+		patch, err := parseConfigPatch(args[2:])
+		if err != nil {
+			fatal(err)
+		}
+		mgr := avd.New(cfg.SdkRootResolved(), cfg.AvdHomeResolved(), cfg.ConfigDir())
+		set, err := mgr.PatchConfig(args[1], patch)
+		if err != nil {
+			fatal(err)
+		}
+		fmt.Println(set)
 	case "screenshot":
 		out := "screen.png"
 		if len(args) >= 2 {
@@ -209,9 +228,47 @@ func usage() {
   install <apk>  adb install -r
   snapshot list|create|restore|delete <name> (qcow2 offline, VM stopped)
   emu-snapshot save <name>|list (live SDK emulator via adb emu)
+  set-config <avd> k=v... (ram_mb cpus width height density; stopped only)
   screenshot [out.png]  adb screencap to file
   view           scrcpy hint for remote viewing
   serve          expose open REST API for external access`)
+}
+
+func parseConfigPatch(kvs []string) (avd.ConfigPatch, error) {
+	var p avd.ConfigPatch
+	setInt := func(dst **int, s string) error {
+		n, err := strconv.Atoi(s)
+		if err != nil {
+			return fmt.Errorf("bad number %q", s)
+		}
+		*dst = &n
+		return nil
+	}
+	for _, kv := range kvs {
+		k, v, ok := strings.Cut(kv, "=")
+		if !ok {
+			return p, fmt.Errorf("want key=value, got %q", kv)
+		}
+		var err error
+		switch strings.ToLower(strings.TrimSpace(k)) {
+		case "ram_mb", "ram":
+			err = setInt(&p.RAMMB, v)
+		case "cpus", "cpu":
+			err = setInt(&p.CPUs, v)
+		case "width":
+			err = setInt(&p.Width, v)
+		case "height":
+			err = setInt(&p.Height, v)
+		case "density":
+			err = setInt(&p.Density, v)
+		default:
+			err = fmt.Errorf("unknown key %q (ram_mb cpus width height density)", k)
+		}
+		if err != nil {
+			return p, err
+		}
+	}
+	return p, nil
 }
 
 func snapCmd(args []string, cfg config.Config, v version.Resolved) {

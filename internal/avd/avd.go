@@ -19,27 +19,27 @@ import (
 
 // Info describes one AVD.
 type Info struct {
-	Name      string `json:"name"`
-	Path      string `json:"path"`
-	Target    string `json:"target"`
-	RAMMB     int    `json:"ram_mb"`
-	CPUs      int    `json:"cpus"`
-	Width     int    `json:"width"`
-	Height    int    `json:"height"`
-	Density   int    `json:"density"`
-	Running   bool   `json:"running"`
-	Serial    string `json:"serial,omitempty"`
-	AdbPort   int    `json:"adb_port,omitempty"`
+	Name      string   `json:"name"`
+	Path      string   `json:"path"`
+	Target    string   `json:"target"`
+	RAMMB     int      `json:"ram_mb"`
+	CPUs      int      `json:"cpus"`
+	Width     int      `json:"width"`
+	Height    int      `json:"height"`
+	Density   int      `json:"density"`
+	Running   bool     `json:"running"`
+	Serial    string   `json:"serial,omitempty"`
+	AdbPort   int      `json:"adb_port,omitempty"`
 	Snapshots []string `json:"snapshots,omitempty"`
 }
 
 // StartOptions for booting an AVD.
 type StartOptions struct {
-	GPU         string `json:"gpu"`          // host | swiftshader_indirect | auto
-	Snapshot    string `json:"snapshot"`     // load named snapshot ("" = default behavior)
-	NoSave      bool   `json:"no_save"`      // -no-snapshot-save
-	NoWindow    bool   `json:"no_window"`
-	ExtraArgs   []string `json:"extra_args,omitempty"`
+	GPU       string   `json:"gpu"`      // host | swiftshader_indirect | auto
+	Snapshot  string   `json:"snapshot"` // load named snapshot ("" = default behavior)
+	NoSave    bool     `json:"no_save"`  // -no-snapshot-save
+	NoWindow  bool     `json:"no_window"`
+	ExtraArgs []string `json:"extra_args,omitempty"`
 }
 
 // ConfigPatch edits .avd/config.ini (VM must be stopped).
@@ -53,8 +53,8 @@ type ConfigPatch struct {
 
 // Manager owns AVD state. Track started PIDs for stop fallback.
 type Manager struct {
-	SdkRoot string
-	AvdHome string
+	SdkRoot  string
+	AvdHome  string
 	StateDir string // pid files
 
 	mu    sync.Mutex
@@ -224,16 +224,13 @@ func (m *Manager) killPID(name string) error {
 }
 
 // PatchConfig edits hw.* keys. The AVD must be stopped.
+// Writes both config.ini and the generated hardware-qemu.ini, because the
+// emulator boots from the latter and may not re-copy the former.
 func (m *Manager) PatchConfig(name string, p ConfigPatch) (map[string]string, error) {
 	for avd := range m.runningMap() {
 		if avd == name {
 			return nil, fmt.Errorf("stop avd %q before editing config", name)
 		}
-	}
-	path := filepath.Join(iniPath(m.AvdHome, name), "config.ini")
-	lines, err := readLines(path)
-	if err != nil {
-		return nil, err
 	}
 	set := map[string]string{}
 	if p.RAMMB != nil {
@@ -251,9 +248,19 @@ func (m *Manager) PatchConfig(name string, p ConfigPatch) (map[string]string, er
 	if p.Density != nil {
 		set["hw.lcd.density"] = strconv.Itoa(*p.Density)
 	}
-	out := applyKV(lines, set)
-	if err := os.WriteFile(path, []byte(strings.Join(out, "\n")+"\n"), 0o644); err != nil {
-		return nil, err
+	dir := iniPath(m.AvdHome, name)
+	for _, path := range []string{filepath.Join(dir, "config.ini"), filepath.Join(dir, "hardware-qemu.ini")} {
+		lines, err := readLines(path)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, err
+		}
+		out := applyKV(lines, set)
+		if err := os.WriteFile(path, []byte(strings.Join(out, "\n")+"\n"), 0o644); err != nil {
+			return nil, err
+		}
 	}
 	return set, nil
 }

@@ -42,7 +42,7 @@ type matrix struct {
 }
 
 type Resolver struct {
-	Client    *http.Client
+	Client     *http.Client
 	MatrixPath string
 }
 

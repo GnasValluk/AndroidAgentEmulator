@@ -21,7 +21,8 @@ func TestTargetFromSysdir(t *testing.T) {
 	}
 }
 
-func TestListReadsAVD(t *testing.T) {	home := t.TempDir()
+func TestListReadsAVD(t *testing.T) {
+	home := t.TempDir()
 	avd := filepath.Join(home, "tab1.avd")
 	_ = os.MkdirAll(avd, 0o755)
 	_ = os.WriteFile(filepath.Join(home, "tab1.ini"), []byte("avd.ini.encoding=UTF-8\npath="+avd+"\n"), 0o644)

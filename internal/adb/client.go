@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 )
+
 type Client struct {
 	Bin     string
 	Address string // e.g. 127.0.0.1:5555

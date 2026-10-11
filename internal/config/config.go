@@ -15,7 +15,7 @@ type DeviceProfile struct {
 	APIVersion   string `json:"api_version"` // e.g. "16", resolved dynamically, never pinned in code
 	RAMMB        int    `json:"ram_mb"`
 	CPUs         int    `json:"cpus"`
-	GPUMode      string `json:"gpu_mode"` // virtio-gpu | swiftshader | host
+	GPUMode      string `json:"gpu_mode"`  // virtio-gpu | swiftshader | host
 	BootMode     string `json:"boot_mode"` // cold | snapshot
 	SnapshotName string `json:"snapshot_name,omitempty"`
 }
