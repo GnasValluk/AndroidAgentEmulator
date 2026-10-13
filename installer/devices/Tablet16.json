@@ -1,1 +1,15 @@
-{"avd":"a16tab","sdk_dir":"sdk","avd_dir":"avd","gpu":"host","tune":"1680x1050","snapshot":"auto","memory":"2048"}
+{
+  "id": "tablet16",
+  "title": "Tablet Android 16",
+  "description": "Tablet Android 16 (Play Store)",
+  "exe": "Tablet16",
+  "avd": "a16tab",
+  "image_package": "system-images;android-36;google_apis_playstore;x86_64",
+  "target": "android-36",
+  "sdk_dir": "sdk",
+  "avd_dir": "avd",
+  "gpu": "host",
+  "tune": "1680x1050",
+  "snapshot": "auto",
+  "memory": "2048"
+}

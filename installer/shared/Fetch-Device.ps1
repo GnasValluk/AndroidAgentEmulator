@@ -1,10 +1,10 @@
 # Fetch SDK pieces + create an AVD without Java (direct zips + INI templates).
 # Idempotent: present pieces are skipped.
-# Usage: powershell -File Fetch-Device.ps1 -InstallDir D:\Apps\TabletLab `
+# Usage: powershell -File Fetch-Device.ps1 -InstallDir D:\Apps\AndroidLab `
 #   -AvdName a16tab -ImagePackage 'system-images;android-36;google_apis_playstore;x86_64' `
 #   -Target android-36 -Template awd-config.ini
 param(
-  [string]$InstallDir = "D:\Apps\TabletLab",
+  [string]$InstallDir = "D:\Apps\AndroidLab",
   [string]$AvdName = "a16tab",
   [string]$ImagePackage = "system-images;android-36;google_apis_playstore;x86_64",
   [string]$Target = "android-36",

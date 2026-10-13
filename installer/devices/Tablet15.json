@@ -1,1 +1,15 @@
-{"avd":"a15tab","sdk_dir":"sdk","avd_dir":"avd","gpu":"host","tune":"1680x1050","snapshot":"auto","memory":"2048"}
+{
+  "id": "tablet15",
+  "title": "Tablet Android 15",
+  "description": "Tablet Android 15 (Play Store)",
+  "exe": "Tablet15",
+  "avd": "a15tab",
+  "image_package": "system-images;android-35;google_apis_playstore;x86_64",
+  "target": "android-35",
+  "sdk_dir": "sdk",
+  "avd_dir": "avd",
+  "gpu": "host",
+  "tune": "1680x1050",
+  "snapshot": "auto",
+  "memory": "2048"
+}

@@ -2,8 +2,8 @@
 
 Install with the common setup (recommended):
 
-1. Run `installer/Output/TabletLab-Setup-0.4.0.exe`
-   (or build it: `"D:\data\Inno Setup 6\ISCC.exe" installer\TabletLab.iss`)
+1. Run `installer/Output/AndroidLab-Setup-0.5.0.exe`
+   (or build it: `"D:\data\Inno Setup 6\ISCC.exe" installer\AndroidLab.iss`)
 2. Tick **Tablet Android 15**, choose the install folder and shortcuts
 3. Double-click the **Tablet Android 15** icon
 
