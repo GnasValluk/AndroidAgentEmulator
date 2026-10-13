@@ -11,7 +11,7 @@
 ;      (regenerates the blocks between BEGIN/END DEVICES markers below).
 ;   4. Rebuild this .iss.
 #define MyAppName "AndroidLab"
-#define MyAppVersion "0.5.0"
+#define MyAppVersion "0.5.1"
 
 [Setup]
 AppId={{95EA4820-7D1E-43CE-B294-FECDB96B19D3}
